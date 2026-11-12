@@ -195,11 +195,12 @@ func (s *Server) handleAPI(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{
-			"csrf":              sess.csrf,
-			"stremio_connected": sess.stremioAuthKey != "",
-			"trakt_connected":   sess.trakt != nil && (sess.trakt.AccessToken != "" || sess.trakt.RefreshToken != ""),
-			"trakt_configured":  sess.trakt != nil,
-			"has_preview":       sess.plan != nil,
+			"csrf":                   sess.csrf,
+			"stremio_connected":      sess.stremioAuthKey != "",
+			"trakt_connected":        sess.trakt != nil && (sess.trakt.AccessToken != "" || sess.trakt.RefreshToken != ""),
+			"trakt_configured":       sess.trakt != nil,
+			"persistent_credentials": s.Store != nil,
+			"has_preview":            sess.plan != nil,
 		})
 	case "/api/stremio/login":
 		if !requireMethod(w, r, http.MethodPost) {

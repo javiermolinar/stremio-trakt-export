@@ -27,6 +27,15 @@ Every build includes a SHA-256 checksum. Pushes and pull requests upload workflo
 
 The binaries are not signed or notarized, so macOS Gatekeeper or Windows SmartScreen may display a warning.
 
+### Run on Windows
+
+1. Download `stremio-trakt-export-windows-amd64.zip` from the release.
+2. Extract the ZIP and run `stremio-trakt-export-windows-amd64.exe`. Go does not need to be installed.
+3. Leave the console open. The app starts a local server and opens <http://127.0.0.1:8080> in the browser.
+4. Use Ctrl+C or close the console to stop it.
+
+Windows currently keeps tokens in memory only, so sign in again after restarting the app. macOS and Linux use the credential file described below.
+
 ## Local web interface
 
 Run:
@@ -53,7 +62,7 @@ The server only accepts loopback addresses. It uses per-session CSRF tokens, sam
 
 ### Saved credentials
 
-Web mode saves the Stremio `authKey`, Trakt Client ID, access token, refresh token, expiry, and Redirect URI in:
+On macOS and Linux, web mode saves the Stremio `authKey`, Trakt Client ID, access token, refresh token, expiry, and Redirect URI in:
 
 ```text
 ~/.config/stremio-trakt-export/credentials.json
@@ -61,4 +70,4 @@ Web mode saves the Stremio `authKey`, Trakt Client ID, access token, refresh tok
 
 The directory uses mode `0700`, the file uses `0600`, and updates are atomic. Trakt refresh tokens are single-use; the app saves each replacement after refreshing. Sessions are restored after a server restart, and **Reset session** deletes the file.
 
-These tokens are not encrypted. Anyone able to read files as your OS user could copy them and access the connected accounts. The legacy CLI does not use this credential file.
+These tokens are not encrypted. Anyone able to read files as your OS user could copy them and access the connected accounts. Windows keeps tokens in memory instead. The legacy CLI does not use this credential file.

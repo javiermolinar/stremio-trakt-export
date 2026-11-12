@@ -51,7 +51,12 @@ func runServe(ctx context.Context, args []string) error {
 	application.Stremio = &stremio.Client{HTTPClient: httpClient}
 	application.Metadata = &cinemeta.Client{HTTPClient: httpClient}
 	application.HTTPClient = httpClient
-	application.Store = webapp.NewCredentialStore("")
+	// Windows token persistence needs DPAPI and NTFS-specific file handling.
+	// Until that is implemented, keep Windows sessions in memory rather than
+	// writing unprotected tokens or relying on Unix rename/permission behavior.
+	if runtime.GOOS != "windows" {
+		application.Store = webapp.NewCredentialStore("")
+	}
 
 	listener, err := net.Listen("tcp", *address)
 	if err != nil {
@@ -74,7 +79,12 @@ func runServe(ctx context.Context, args []string) error {
 		}
 	}()
 	url := "http://" + listener.Addr().String()
-	fmt.Fprintf(os.Stderr, "Open %s\nCredentials are saved with user-only permissions in %s\n", url, application.Store.Path())
+	fmt.Fprintf(os.Stderr, "Open %s\n", url)
+	if application.Store != nil {
+		fmt.Fprintf(os.Stderr, "Credentials are saved with user-only permissions in %s\n", application.Store.Path())
+	} else {
+		fmt.Fprintln(os.Stderr, "Credentials are held in memory for this session only.")
+	}
 	if !*noOpen {
 		go func() {
 			time.Sleep(250 * time.Millisecond)

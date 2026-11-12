@@ -35,6 +35,8 @@ const translations = {
     confirmImport: "Import {count} selected items into {destination}? Existing entries will be skipped.", importing: "Importing…",
     importFinished: "Import finished. Review the result below; rerun safely if any items were not found.", resetConfirm: "Clear the saved session and tokens?",
     languageAria: "Switch to Spanish", copyFallback: "Redirect URI selected. Press Ctrl+C or ⌘C to copy it.", migrationType: "Migration type",
+    stremioHintMemory: "Credentials go directly from this local server to Stremio. On this platform, tokens stay in memory and are cleared when the app stops.",
+    footerMemory: "Runs only on this machine. On Windows, tokens stay in memory and are cleared when the app stops.",
   },
   es: {
     eyebrow: "HERRAMIENTA DE MIGRACIÓN LOCAL", subtitle: "Migra tus pelis y series de Stremio a Trakt.tv.", reset: "Restablecer sesión",
@@ -70,6 +72,8 @@ const translations = {
     confirmImport: "¿Importar {count} elementos seleccionados a {destination}? Se omitirán las entradas existentes.", importing: "Importando…",
     importFinished: "Importación terminada. Revisa el resultado; puedes volver a ejecutarla de forma segura si no se encontró algún elemento.", resetConfirm: "¿Borrar la sesión y los tokens guardados?",
     languageAria: "Cambiar a inglés", copyFallback: "Redirect URI seleccionada. Pulsa Ctrl+C o ⌘C para copiarla.", migrationType: "Tipo de migración",
+    stremioHintMemory: "Las credenciales van directamente de este servidor local a Stremio. En esta plataforma, los tokens permanecen en memoria y se borran al cerrar la app.",
+    footerMemory: "Se ejecuta solo en este equipo. En Windows, los tokens permanecen en memoria y se borran al cerrar la app.",
   },
 };
 
@@ -77,7 +81,7 @@ const browserSpanish = typeof navigator.language === "string" && navigator.langu
 let savedLanguage = "";
 try { savedLanguage = localStorage.getItem("stremio-trakt-language") || ""; } catch { /* Browser storage may be disabled. */ }
 const state = {
-  csrf: "", stremio: false, trakt: false, traktConfigured: false,
+  csrf: "", stremio: false, trakt: false, traktConfigured: false, persistentCredentials: false,
   items: [], historyItems: [], stats: {}, view: "watchlist", issueCount: 0,
   language: savedLanguage === "es" || savedLanguage === "en" ? savedLanguage : (browserSpanish ? "es" : "en"),
   selections: {
@@ -100,9 +104,15 @@ function applyLanguage() {
   $("language-toggle").setAttribute("aria-label", t("languageAria"));
   $("filter").setAttribute("aria-label", t("filterPlaceholder"));
   document.querySelector(".view-tabs").setAttribute("aria-label", t("migrationType"));
+  updateCredentialText();
   updateConnections();
   if (!$("preview-section").hidden) renderCurrentView();
   if (state.issueCount > 0) $("issues-summary").textContent = t("issues", { count: state.issueCount });
+}
+
+function updateCredentialText() {
+  document.querySelector('[data-i18n="stremioHint"]').textContent = state.persistentCredentials ? t("stremioHint") : t("stremioHintMemory");
+  document.querySelector("footer").textContent = state.persistentCredentials ? t("footer") : t("footerMemory");
 }
 
 async function api(path, options = {}) {
@@ -147,6 +157,8 @@ async function loadSession() {
   state.stremio = session.stremio_connected;
   state.trakt = session.trakt_connected;
   state.traktConfigured = session.trakt_configured;
+  state.persistentCredentials = session.persistent_credentials;
+  updateCredentialText();
   updateConnections();
   if (session.has_preview) await loadPreview("GET");
 }
