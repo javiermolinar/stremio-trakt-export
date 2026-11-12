@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stremio → Trakt</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header class="hero">
+      <div>
+        <p class="eyebrow" data-i18n="eyebrow">LOCAL MIGRATION TOOL</p>
+        <h1>Stremio <span>→</span> Trakt</h1>
+        <p class="subtitle" data-i18n="subtitle">Migrate Stremio Not Watched items and watched history to Trakt.</p>
+      </div>
+      <div class="hero-actions">
+        <button id="language-toggle" class="button ghost" type="button" aria-label="Switch to Spanish">ES</button>
+        <button id="logout" class="button ghost" type="button" data-i18n="reset">Reset session</button>
+      </div>
+    </header>
+
+    <div id="error" class="notice error" role="alert" hidden></div>
+    <div id="status" class="notice" role="status" hidden></div>
+
+    <section class="connections" aria-label="Account connections">
+      <article class="card">
+        <div class="card-heading">
+          <div><span class="step">1</span><h2 data-i18n="connectStremio">Connect Stremio</h2></div>
+          <span id="stremio-badge" class="badge">Not connected</span>
+        </div>
+        <form id="stremio-form">
+          <label><span data-i18n="email">Email</span> <input id="stremio-email" type="email" autocomplete="username" placeholder="you@example.com"></label>
+          <label><span data-i18n="password">Password</span> <input id="stremio-password" type="password" autocomplete="current-password" placeholder="••••••••"></label>
+          <button class="button primary" type="submit" data-i18n="signIn">Sign in</button>
+          <p class="hint" data-i18n="stremioHint">Credentials go directly from this local server to Stremio. The resulting token is saved locally with user-only permissions.</p>
+        </form>
+        <details class="alternative">
+          <summary data-i18n="authKeyAlternative">Or use an existing authKey</summary>
+          <form id="authkey-form">
+            <label>Stremio authKey <input id="stremio-authkey" type="password" autocomplete="off"></label>
+            <button class="button secondary" type="submit" data-i18n="useAuthKey">Use authKey</button>
+          </form>
+        </details>
+      </article>
+
+      <article class="card">
+        <div class="card-heading">
+          <div><span class="step">2</span><h2 data-i18n="connectTrakt">Connect Trakt</h2></div>
+          <span id="trakt-badge" class="badge">Not connected</span>
+        </div>
+        <details id="trakt-setup-guide" class="setup-guide" open>
+          <summary data-i18n="setupTitle">First-time Trakt app setup</summary>
+          <ol>
+            <li data-i18n-html="setupCreate">Open <a href="https://app.trakt.tv/settings/apps/api/new" target="_blank" rel="noopener noreferrer">Trakt → Create API App</a>. Sign in with your normal Trakt account if asked.</li>
+            <li data-i18n-html="setupName">Enter any app name, for example <strong>Stremio Export</strong>. Leave the other options as they are.</li>
+            <li>
+              <span data-i18n-html="setupRedirect">In Trakt’s <strong>Redirect URI</strong> field, paste exactly:</span>
+              <div class="copy-row"><code>https://example.com/callback</code><button id="copy-redirect" class="button small" type="button" data-i18n="copyUri">Copy URI</button></div>
+            </li>
+            <li data-i18n-html="setupClient">Save the app. Open it from <a href="https://app.trakt.tv/settings/apps/api" target="_blank" rel="noopener noreferrer">Trakt → Your API Apps</a> and copy its <strong>Client ID</strong> into the field below.</li>
+          </ol>
+          <p class="hint" data-i18n-html="setupSecret">Use the <strong>Client ID</strong>, not the Client Secret. This app uses PKCE, so newer Trakt apps correctly show “Client Secret: Not issued.”</p>
+        </details>
+        <form id="trakt-form">
+          <label><span data-i18n="clientIdLabel">Paste the app’s Client ID</span> <input id="trakt-client-id" type="text" autocomplete="off" data-i18n-placeholder="clientIdPlaceholder" placeholder="Client ID from your Trakt API app" required></label>
+          <label><span data-i18n="redirectLabel">Redirect URI used in the app</span> <input id="trakt-redirect-uri" type="url" value="https://example.com/callback" required></label>
+          <p class="hint" data-i18n-html="redirectHint">This must match the Trakt app exactly, including <strong>https://</strong> and <strong>/callback</strong>.</p>
+          <button id="trakt-connect" class="button primary" type="submit" data-i18n="continueTrakt">Continue to Trakt login</button>
+        </form>
+        <div id="oauth-flow" class="device" hidden>
+          <p><strong>1.</strong> <span data-i18n="oauthOneBefore">Open the</span> <a id="authorization-link" target="_blank" rel="noopener noreferrer" data-i18n="oauthLink">regular Trakt login</a> <span data-i18n="oauthOneAfter">and click Authorize.</span></p>
+          <p data-i18n-html="oauthTwo"><strong>2.</strong> Trakt redirects to <code>example.com/callback</code>. The page may show an error or not load; this is expected.</p>
+          <p data-i18n-html="oauthThree"><strong>3.</strong> Copy the <strong>entire URL</strong> from that page’s address bar. It must include <code>code=...</code> and <code>state=...</code>. Paste it below—not just the code.</p>
+          <form id="callback-form">
+            <label><span data-i18n="callbackLabel">Callback URL</span> <input id="callback-url" type="url" placeholder="https://example.com/callback?code=...&amp;state=..." required></label>
+            <button id="callback-submit" class="button primary" type="submit" data-i18n="completeSignIn">Complete Trakt sign-in</button>
+          </form>
+        </div>
+      </article>
+    </section>
+
+    <section class="card load-card">
+      <div><span class="step">3</span><h2 data-i18n="loadLibrary">Load your library</h2></div>
+      <button id="load-library" class="button secondary" type="button" data-i18n="fetchData" disabled>Fetch Stremio data</button>
+    </section>
+
+    <section id="preview-section" class="card" hidden>
+      <div class="preview-heading">
+        <div><span class="step">4</span><h2 data-i18n="chooseMigration">Choose what to migrate</h2></div>
+        <p id="preview-stats" class="hint"></p>
+      </div>
+      <div class="view-tabs" role="tablist" aria-label="Migration type">
+        <button id="tab-watchlist" class="view-tab active" type="button" role="tab" aria-selected="true" data-i18n="watchlistTab">Not Watched → Trakt List</button>
+        <button id="tab-history" class="view-tab" type="button" role="tab" aria-selected="false" data-i18n="historyTab">Watched → History</button>
+      </div>
+      <div class="toolbar">
+        <div>
+          <button id="all-watchlist" class="button small" type="button" data-i18n="selectAll">Select all</button>
+          <button id="select-none" class="button small" type="button" data-i18n="clear">Clear</button>
+        </div>
+        <input id="filter" type="search" data-i18n-placeholder="filterPlaceholder" placeholder="Filter titles" aria-label="Filter titles">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th data-i18n="titleColumn">Title</th><th data-i18n="typeColumn">Type</th><th id="destination-heading">Add to Trakt List</th></tr></thead>
+          <tbody id="items"></tbody>
+        </table>
+      </div>
+      <p id="view-hint" class="hint"></p>
+      <details id="issues-wrap" class="issues" hidden>
+        <summary id="issues-summary">Conversion issues</summary>
+        <ul id="issues"></ul>
+      </details>
+    </section>
+
+    <section id="import-section" class="card import-card" hidden>
+      <div><span class="step">5</span><h2 data-i18n="importTitle">Import selected items</h2></div>
+      <p id="selection-summary">Nothing selected.</p>
+      <button id="import-button" class="button primary" type="button" data-i18n="importButton" disabled>Import into Trakt</button>
+      <pre id="import-result" hidden></pre>
+    </section>
+
+    <footer data-i18n="footer">Runs only on this machine. Tokens survive restarts; Reset session deletes the saved credential file.</footer>
+  </main>
+</body>
+</html>

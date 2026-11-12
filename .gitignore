@@ -1,0 +1,5 @@
+/stremio-trakt-export
+/stremio-trakt-preview.json
+*.test
+/dist/
+/release/
